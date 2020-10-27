@@ -10,6 +10,51 @@ import os
 import COPASI
 from builtins import enumerate
 
+
+def run_parameter_estimation(dm):
+    task = dm.getTask('Parameter Estimation')
+    assert (isinstance(task, COPASI.CFitTask))
+    task.setScheduled(True)
+    problem = task.getProblem()
+    problem.setCalculateStatistics(False)
+
+    reaction = dm.getModel().getReaction(0)
+    objects = reaction.getParameterObjects()
+
+    cn_name_map = {}
+
+    # add fit items for reaction parameters
+    for obj in objects:
+        param = obj[0]
+        if param.getObjectAncestor('Reaction') is None:
+            # skip all non-local parameters
+            continue
+        value = reaction.getParameterValue(param.getObjectName())
+        item = problem.addFitItem(param.getValueObject().getCN())
+        item.setStartValue(value)  # the current initial concentration
+        item.setLowerBound(COPASI.CCommonName(str(value * 0.0001)))
+        item.setUpperBound(COPASI.CCommonName(str(value * 10000)))
+        cn_name_map[param.getValueObject().getCN().getString()] = param.getObjectName()
+
+    # switch optimization method
+    task.setMethodType(COPASI.CTaskEnum.Method_LevenbergMarquardt)
+
+    # run optimization
+    task.initialize(COPASI.CCopasiTask.OUTPUT_UI)
+    task.process(True)
+
+    # print parameter values
+    assert (isinstance(problem, COPASI.CFitProblem))
+    results = problem.getSolutionVariables()
+    for i in range(problem.getOptItemSize()):
+        item = problem.getOptItem(i)
+        cn = item.getObjectCN().getString()
+        if cn not in cn_name_map:
+            continue
+        value = results.get(i)
+        print(" {0}: {1}".format(cn_name_map[cn], value))
+
+
 class ThinLayerCopasi(object):
     
     def importEnzymeML(self, reaction, reactants, path, outdir=None):
@@ -129,6 +174,8 @@ class ThinLayerCopasi(object):
         dm.saveModel( outdir + "/" + fname + ".cps", True)
         
         print("Saved model to " + outdir + "/" + fname + ".cps")
+
+        run_parameter_estimation(dm)
         
 if __name__ == '__main__':
     
