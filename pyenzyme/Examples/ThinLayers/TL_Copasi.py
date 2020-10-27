@@ -78,10 +78,8 @@ class ThinLayerCopasi(object):
                 data.to_csv( outdir +'/experiment_%s_%i.tsv' % ( reactant, i ), sep='\t', header=True)
                 
                 exp = COPASI.CExperiment(dm)
-                exp = exp_set.addExperiment(exp)
-                info = COPASI.CExperimentFileInfo(exp_set)
-                info.setFileName( outdir + '/experiment_%s_%i.tsv' % ( reactant, i ))
-                exp.setObjectName(reaction.getName())
+                #exp.setObjectName(reaction.getName())  # the name should be unique, so here we have to generate one
+                exp.setObjectName('{0} at {1:.2f}'.format(metab.getObjectName(), conc_val))
                 exp.setFirstRow(1)
                 exp.setLastRow(data.shape[0]+1)
                 exp.setHeaderRow(1)
@@ -89,7 +87,10 @@ class ThinLayerCopasi(object):
                 exp.setExperimentType(COPASI.CTaskEnum.Task_timeCourse)
                 exp.setSeparator('\t')
                 exp.setNumColumns(2)
-                
+                exp = exp_set.addExperiment(exp)
+                info = COPASI.CExperimentFileInfo(exp_set)
+                info.setFileName(outdir + '/experiment_%s_%i.tsv' % (reactant, i))
+
                 # add the initial concentration as fit item
                 item = problem.addFitItem(cn)
                 item.setStartValue(conc_val)  # the current initial concentration 
@@ -122,8 +123,9 @@ class ThinLayerCopasi(object):
         task = dm.getTask('Parameter Estimation')
         task.setMethodType(COPASI.CTaskEnum.Method_Statistics)
         COPASI.COutputAssistant.getListOfDefaultOutputDescriptions(task)
-        COPASI.COutputAssistant.createDefaultOutput(913, task, dm)
-        COPASI.COutputAssistant.createDefaultOutput(910, task, dm)
+        COPASI.COutputAssistant.createDefaultOutput(913, task, dm)  # progress of fit plot
+        # COPASI.COutputAssistant.createDefaultOutput(910, task, dm)  # parameter estimation result (all experiments in one)
+        COPASI.COutputAssistant.createDefaultOutput(911, task, dm)  # parameter estimation result per experiment
         dm.saveModel( outdir + "/" + fname + ".cps", True)
         
         print("Saved model to " + outdir + "/" + fname + ".cps")
