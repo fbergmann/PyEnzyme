@@ -1,6 +1,5 @@
 '''
 Created on 04.08.2020
-
 @author: JR
 '''
 
@@ -178,5 +177,5 @@ class ThinLayerCopasi(object):
         run_parameter_estimation(dm)
         
 if __name__ == '__main__':
-    
-    ThinLayerCopasi().importEnzymeML('r0', 's1', "../../Resources/Examples/ThinLayers/COPASI/3IZNOK_TEST/3IZNOK_TEST.omex")
+    print(os.path.abspath("../../Resources/Examples/ThinLayers/COPASI/3IZNOK_TEST/3IZNOK_TEST.omex"))
+    ThinLayerCopasi().importEnzymeML('r0', 's1', os.path.abspath("../../Resources/Examples/ThinLayers/COPASI/3IZNOK_TEST/3IZNOK_TEST.omex") )
